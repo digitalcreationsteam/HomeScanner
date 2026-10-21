@@ -1,13 +1,54 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+html { scroll-behavior: smooth; }
+[id] { scroll-margin-top: 5rem; }
+body { @apply bg-paper font-sans text-ink antialiased; }
+:focus-visible { outline: 2px solid #4F7DAD; outline-offset: 3px; border-radius: 6px; }
+
+@layer components {
+  .btn {
+    @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-medium;
+    isolation: isolate;
+    transition: color .45s ease, border-color .45s ease, box-shadow .45s ease;
+  }
+
+  /* the colour that sweeps in on hover */
+  .btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    transform: translateY(101%);
+    transition: transform .55s cubic-bezier(.22, 1, .36, 1);
+  }
+  .btn:hover::before { transform: translateY(0); }
+
+  /* small nudge on the arrow icon */
+  .btn svg { transition: transform .45s cubic-bezier(.22, 1, .36, 1); }
+  .btn:hover svg { transform: translateX(4px); }
+
+  /* primary: Polo Blue, dark text, sweeps to Mirage on hover */
+  .btn-accent { @apply bg-sky text-ink hover:text-white; }
+  .btn-accent::before { @apply bg-ink; }
+
+  /* dark: Mirage, sweeps to Polo Blue on hover */
+  .btn-dark   { @apply bg-ink text-white hover:text-ink; }
+  .btn-dark::before { @apply bg-sky; }
+
+  /* light: white outline button, sweeps to Polo Blue on hover */
+  .btn-light  { @apply border border-line bg-white text-ink hover:border-sky; }
+  .btn-light::before { @apply bg-sky; }
+
+  .wrap { @apply mx-auto w-full max-w-[1760px] px-6 md:px-12 xl:px-16; }
+  .h2 { @apply text-4xl font-medium leading-[1.1] tracking-tight md:text-5xl; }
+}
+/* hide the native cursor only when the custom one is active */
+@media (pointer: fine) {
+  html.has-cursor,
+  html.has-cursor * { cursor: none !important; }
 }
