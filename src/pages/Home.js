@@ -354,7 +354,7 @@ function Owners() {
          <div className="wrap relative py-24">
            <div className="lg:max-w-[48%]">
              <Reveal>
-               <h2 className="h2">Scan. Access.<br /><span className="text-[#9B8EFF]">Know Your Home.</span></h2>
+               <h2 className="h2">Scan. Access.<br /><span className="text-[#78A9CE]">Know Your Home.</span></h2>
                <p className="mt-5 max-w-md text-white/60">Every home gets a unique QR code — your gateway to the complete digital record of your property.</p>
              </Reveal>
    
