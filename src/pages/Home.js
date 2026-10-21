@@ -8,6 +8,7 @@ import Icon from "../components/Icon";
 import appIcon from "../assets/google.jpeg";
 import Magnetic from "../components/Magnetic";
 import appPreview from "../assets/google.jpeg";
+import appPreviewIos from "../assets/app.png";
 import { badges, trust, records, steps, benefits, owners, scanSteps } from "../data";
 
 /* ---------- motion presets ---------- */
@@ -435,7 +436,7 @@ const PlayLogo = ({ className }) => (
   Store button. On hover a tab with the store's logo grows out of the top edge of the button,
   in the same colour, so it looks attached to it (the small curved fillets blend the corners).
 */
-function StoreButton({ small, name, Logo, label }) {
+function StoreButton({ small, name, Logo, label, preview }) {
   return (
     <motion.a
       href="#top"
@@ -496,12 +497,12 @@ function StoreButton({ small, name, Logo, label }) {
             </motion.span>
 
             <img
-              src={appPreview}
-              alt="SpaceX app preview"
-              draggable={false}
-              className="block h-auto w-full rounded-xl"
-              style={{ transform: "translateZ(8px)" }}
-            />
+  src={preview}
+  alt={`${name} app preview`}
+  draggable={false}
+  className="block h-auto w-full rounded-xl"
+  style={{ transform: "translateZ(8px)" }}
+/>
           </span>
         </motion.span>
 
@@ -584,8 +585,20 @@ function Cta() {
                     Book a Builder Demo <Icon name="arrow" className="h-4 w-4" />
                   </Link>
                 </Magnetic>
-                <StoreButton small="Download on the" name="App Store" Logo={AppleLogo} label="Download on the App Store" />
-                <StoreButton small="GET IT ON" name="Google Play" Logo={PlayLogo} label="Get it on Google Play" />
+                <StoreButton
+  small="Download on the"
+  name="App Store"
+  Logo={AppleLogo}
+  label="Download on the App Store"
+  preview={appPreviewIos}
+/>
+<StoreButton
+  small="GET IT ON"
+  name="Google Play"
+  Logo={PlayLogo}
+  label="Get it on Google Play"
+  preview={appPreview}
+/>
               </motion.div>
             </div>
 
