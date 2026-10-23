@@ -3,12 +3,11 @@ import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { N, qrCells } from "./QRMark";
 import { usePhoneScroll, drawFeed, clamp, FEED_H } from "./Usephonescroll";
-import { Phone, Env, DepthReset, haloTexture, reduced } from "./Blueprint3d";
+import { Phone, Env, DepthReset, haloTexture, reduced, isPhone, texScale, useOnScreen } from "./Blueprint3d";
 import FloorPlan, { PLAN_W } from "./Floorplan3d";
 
 /* same iPhone model as the hero; the screen is a tall texture and the phone shows a VIEW_H window into it */
 const LOGICAL_W = 512;
-const SCALE = 2;                                          // texture is drawn at 2x for sharpness
 const SCREEN_W = 0.97, SCREEN_H = 2.03;                   // world size of the phone screen
 const VIEW_H = Math.round((LOGICAL_W * SCREEN_H) / SCREEN_W);
 const FEED_TOP = 890;
@@ -19,7 +18,8 @@ const INK = "#1C2C35";
 
 function draw(canvas) {
   const W = LOGICAL_W, ctx = canvas.getContext("2d");
-  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  const scale = canvas.width / LOGICAL_W;   // 2x on desktop, less on phones (see texScale)
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
   const text = (s, x, y, font, color, align = "left") => {
     ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(s, x, y);
   };
@@ -63,12 +63,14 @@ function Scene({ source, zone, view }) {
   const plan = useRef();
   const gl = useThree((state) => state.gl);
   const size = useThree((state) => state.size);
+  const mobile = size.width < 768;
   const halo = useMemo(haloTexture, []);
 
   const tex = useMemo(() => {
     const canvas = document.createElement("canvas");
-    canvas.width = LOGICAL_W * SCALE;
-    canvas.height = CONTENT_H * SCALE;
+    const sc = texScale(gl, CONTENT_H);
+    canvas.width = Math.round(LOGICAL_W * sc);
+    canvas.height = Math.round(CONTENT_H * sc);
     draw(canvas);
     const t = new THREE.CanvasTexture(canvas);
     t.colorSpace = THREE.SRGBColorSpace;
@@ -85,7 +87,7 @@ function Scene({ source, zone, view }) {
 
   // the section switches to two columns at lg (1024px)
   const isWide = (w) => w >= 1024;
-  const phonePx = (w, h) => (isWide(w) ? Math.min(600, h * 0.86) : 440);
+  const phonePx = (w, h) => (isWide(w) ? Math.min(600, h * 0.86) : Math.min(520, Math.max(368, w * 1.15)));
 
   const scroll = usePhoneScroll({
     groupRef: spin,
@@ -217,7 +219,7 @@ function Scene({ source, zone, view }) {
         position={[4, 8, 5]}
         intensity={1.5}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={mobile ? [1024, 1024] : [2048, 2048]}
         shadow-camera-left={-9}
         shadow-camera-right={9}
         shadow-camera-top={9}
@@ -253,14 +255,16 @@ function Scene({ source, zone, view }) {
 
 /* Full-section canvas: pass the <section> element as `source` so dragging anywhere on it scrolls the phone. */
 export default function PhoneScene({ source, zone, view }) {
+  const visible = useOnScreen(source);   // stop rendering while the section is off-screen
   return (
     <Canvas
+      frameloop={visible ? "always" : "never"}
       shadows
       eventSource={source}
       eventPrefix="client"
       camera={{ position: [0, 0.6, 7], fov: 32 }}
-      dpr={[1.5, 2]}
-      gl={{ antialias: true, alpha: true }}
+      dpr={isPhone() ? [1, 1.5] : [1.5, 2]}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       aria-label="3D iPhone scanning a home QR code in front of an architectural blueprint skyline. Drag the phone to browse the home's digital passport."
     >
       <Scene source={source} zone={zone} view={view} />

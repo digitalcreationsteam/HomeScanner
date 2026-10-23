@@ -1,10 +1,30 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 export const ACCENT = "#4F7DAD";
 export const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- mobile helpers ---------- */
+export const isPhone = () => typeof window !== "undefined" && window.innerWidth < 768;
+
+/* texture scale for the phone screen: 2x on desktop, 1.5x on phones, never bigger than the GPU allows */
+export function texScale(gl, contentH) {
+  return Math.max(1, Math.min(isPhone() ? 1.5 : 2, gl.capabilities.maxTextureSize / contentH));
+}
+
+/* true while `el` is on (or near) the screen: used to pause WebGL rendering when scrolled away (saves battery) */
+export function useOnScreen(el, margin = 100) {
+  const [on, setOn] = useState(true);
+  useEffect(() => {
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setOn(e.isIntersecting), { rootMargin: `${margin}px` });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [el, margin]);
+  return on;
+}
 
 /* ---------- helpers ---------- */
 export function roundedRect(w, h, r) {
@@ -254,12 +274,12 @@ function makeTower(cfg, color, penColor) {
     spr.scale.set(4, 0.5, 1);
     spr.position.set(cfg.w / 2 + 2.9, h * 0.8, cfg.d / 2 + 0.7);
     g.add(spr);
-    label = { cv, tex, stage: -1, color };
+    label = { cv, tex, stage: -1, color, spr };
   }
   return { g, mGeo, gGeo, pen, label, mSegs: main.length / 6, gSegs: guide.length / 6, at: cfg.at };
 }
 
-function updateTower(tw, el, now) {
+function updateTower(tw, el, now, showLabel = true) {
   const P = clamp01((el - tw.at) / DRAW);   // overall progress of this tower
   const q = clamp01((P - 0.06) / 0.94);     // progress of the main drawing
   tw.g.visible = P > 0;
@@ -277,6 +297,7 @@ function updateTower(tw, el, now) {
   tw.pen.scale.setScalar(1 + 0.35 * Math.sin(now * 14));
 
   if (tw.label) {
+    tw.label.spr.visible = showLabel;   // on narrow (portrait) screens the label would be cropped
     const stage = P < 0.3 ? 0 : q < 0.6 ? 1 : q < 1 ? 2 : 3;
     if (stage !== tw.label.stage) {
       tw.label.stage = stage;
@@ -346,7 +367,7 @@ export const Architecture = memo(function Architecture({ color = ACCENT, penColo
     return g;
   }, [color]);
 
-  useFrame(({ clock, pointer }) => {
+  useFrame(({ clock, pointer, size }) => {
     const now = clock.getElapsedTime();
     if (t0.current === null) t0.current = now;
     const el = reduced ? 99 : now - t0.current;   // seconds since the scene mounted
@@ -368,7 +389,7 @@ export const Architecture = memo(function Architecture({ color = ACCENT, penColo
     });
 
     // tall towers are drafted line by line
-    towers.forEach((tw) => updateTower(tw, el, now));
+    towers.forEach((tw) => updateTower(tw, el, now, size.width >= 1024));
 
     group.current.rotation.y = Math.sin(t * 0.08) * 0.12 + pointer.x * 0.05;
     group.current.position.x = -pointer.x * 0.5;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useAnimate } from "framer-motion";
 import HeroScene from "../components/HeroScene";
 import PhoneScene from "../components/PhoneScene";
 import QRMark from "../components/QRMark";
@@ -9,6 +9,8 @@ import appIcon from "../assets/google.jpeg";
 import Magnetic from "../components/Magnetic";
 import appPreview from "../assets/google.jpeg";
 import appPreviewIos from "../assets/app.png";
+import { createPortal } from "react-dom";
+import { AnimatePresence, useReducedMotion } from "framer-motion";
 import { badges, trust, records, steps, benefits, owners, scanSteps } from "../data";
 
 /* ---------- motion presets ---------- */
@@ -20,6 +22,7 @@ const container = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } 
 const item = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease } } };
 const reveal = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport, transition: { duration: 0.7, ease } };
 
+const NAV_DELAY = 950;
 /* hover presets */
 const cardHover = {
   y: -8,
@@ -62,74 +65,108 @@ const IconBox = ({ name, dark }) => (
   </motion.span>
 );
 
-function Hero() {
-  const [section, setSection] = useState(null);
-  return (
-    <>
-      <section ref={setSection} id="top" className="relative flex items-center overflow-hidden md:min-h-[calc(100vh-4rem)]">
-        {section && (
-          <div className="pointer-events-none absolute inset-0">
-            <HeroScene source={section} />
-          </div>
-        )}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[52%] bg-gradient-to-b from-paper via-paper/70 to-transparent md:hidden" />
-        <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-paper via-paper/60 to-transparent md:block" />
 
-        <div className="wrap relative py-14 md:py-20">
-          <motion.div variants={container} initial="hidden" animate="show" className="md:max-w-[44%]">
-            <motion.p variants={item} className="inline-block rounded-full border border-accent/30 bg-white px-4 py-1.5 text-sm text-deep">
-              The digital passport of your home.
-            </motion.p>
-            <motion.h1
-              variants={item}
-              className="mt-6 text-[length:clamp(2.6rem,5.4vw,4.7rem)] font-semibold uppercase leading-[0.92] tracking-[-0.035em] text-ink"
-            >
-              Your Home.<br />Digitally<br />Documented.
-            </motion.h1>
-            <motion.p variants={item} className="mt-6 max-w-lg text-lg leading-relaxed text-muted">
-              HomeScanner creates a permanent digital record of your property — materials, appliances, warranties, installations and maintenance information, all in one place.
-            </motion.p>
-            <motion.div variants={item} className="mt-9 flex flex-wrap gap-3">
-              <Magnetic>
-                <Link to="/demo" className="btn btn-accent">Book a Builder Demo <Icon name="arrow" className="h-4 w-4" /></Link>
-              </Magnetic>
-              <Magnetic>
-                <a href="#records" className="btn btn-light">Explore HomeScanner</a>
-              </Magnetic>
+   function Hero() {
+    const [section, setSection] = useState(null);
+  
+    // debug: tells you whether this version of Hero() is the one on the page (remove when done)
+    useEffect(() => {
+      if (!section) return;
+      const el = section.querySelector("[data-passport-mobile]");
+      const r = el && el.getBoundingClientRect();
+      console.log("%c[Hero]", "color:#4F7DAD;font-weight:600", {
+        viewport: `${window.innerWidth}px`,
+        layout: window.innerWidth >= 1024 ? "desktop (card beside phone)" : "mobile/tablet (card on phone edge)",
+        mobileCard: el ? { inDom: true, visible: r.width > 0, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) } : "NOT IN DOM: Hero() in Home.js is not the latest version",
+      });
+    }, [section]);
+  
+    return (
+      <>
+        <section ref={setSection} id="top" className="relative flex items-center overflow-hidden lg:min-h-[calc(100vh-4rem)]">
+          {section && (
+            <div className="pointer-events-none absolute inset-0">
+              <HeroScene source={section} />
+            </div>
+          )}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[52%] bg-gradient-to-b from-paper via-paper/70 to-transparent lg:hidden" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-paper via-paper/60 to-transparent lg:block" />
+  
+          <div className="wrap relative py-14 md:py-20">
+            <motion.div variants={container} initial="hidden" animate="show" className="lg:max-w-[44%]">
+              <motion.p variants={item} className="inline-block rounded-full border border-accent/30 bg-white px-4 py-1.5 text-sm text-deep">
+                The digital passport of your home.
+              </motion.p>
+              <motion.h1
+                variants={item}
+                className="mt-6 text-[length:clamp(2.6rem,5.4vw,4.7rem)] font-semibold uppercase leading-[0.92] tracking-[-0.035em] text-ink"
+              >
+                Your Home.<br />Digitally<br />Documented.
+              </motion.h1>
+              <motion.p variants={item} className="mt-6 max-w-lg text-lg leading-relaxed text-muted">
+                HomeScanner creates a permanent digital record of your property — materials, appliances, warranties, installations and maintenance information, all in one place.
+              </motion.p>
+              <motion.div variants={item} className="mt-9 flex flex-wrap gap-3">
+                <Magnetic>
+                  <Link to="/demo" className="btn btn-accent">Book a Builder Demo <Icon name="arrow" className="h-4 w-4" /></Link>
+                </Magnetic>
+                <Magnetic>
+                  <a href="#records" className="btn btn-light">Explore HomeScanner</a>
+                </Magnetic>
+              </motion.div>
+              <motion.div variants={item} className="mt-9 flex flex-wrap gap-x-8 gap-y-4">
+                {badges.map(([icon, t, d]) => (
+                  <motion.div key={t} whileHover={rowHover} className="flex items-center gap-3">
+                    <IconBox name={icon} />
+                    <div className="leading-tight">
+                      <p className="text-sm font-medium">{t}</p>
+                      <p className="text-xs text-muted">{d}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
             </motion.div>
-            <motion.div variants={item} className="mt-9 flex flex-wrap gap-x-8 gap-y-4">
-              {badges.map(([icon, t, d]) => (
-                <motion.div key={t} whileHover={rowHover} className="flex items-center gap-3">
-                  <IconBox name={icon} />
-                  <div className="leading-tight">
-                    <p className="text-sm font-medium">{t}</p>
-                    <p className="text-xs text-muted">{d}</p>
-                  </div>
+            
+            {/* Room for the phone below the text (phones + tablets). */}
+            <div className="relative h-[clamp(440px,calc(115vw_+_70px),590px)] lg:hidden">
+              <div
+                data-passport-mobile
+                className="absolute z-20 md:translate-y-6"
+                style={{
+                  // Shifted slightly more to the right and up compared to the old version
+                  left: "calc(50% + clamp(368px, 115vw, 520px) * 0.25)",
+                  top: "calc(clamp(368px, 115vw, 520px) * 0.32)",
+                }}
+              >
+                <motion.div
+                  animate={{ y: [0, -5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-[7.5rem] rounded-2xl border border-line bg-white p-3 shadow-[0_16px_40px_-16px_rgba(28,44,53,0.35)]"
+                >
+                  <QRMark className="mx-auto h-14 w-14 text-ink" />
+                  <p className="mt-2 text-[11px] font-medium text-deep">Digital Passport</p>
+                  <p className="text-[9px] leading-snug text-muted">Scan to view this home's digital record</p>
                 </motion.div>
-              ))}
+              </div>
+            </div>
+          </div>
+  
+          {/* Digital Passport card, desktop: set beside the phone */}
+          <div className="absolute left-[calc(67%+160px)] top-1/2 hidden -translate-y-1/2 lg:block xl:left-[calc(67%+200px)]">
+            <motion.div
+              animate={{ y: [0, -6, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              whileHover={{ scale: 1.06, rotate: 2, transition: spring }}
+              className="w-40 cursor-pointer rounded-2xl border border-line bg-white p-4 shadow-[0_20px_50px_-20px_rgba(28,44,53,0.3)]"
+            >
+              <QRMark className="mx-auto h-20 w-20 text-ink" />
+              <p className="mt-3 text-xs font-medium text-deep">Digital Passport</p>
+              <p className="text-[10px] leading-snug text-muted">Scan to view this home's digital record</p>
             </motion.div>
-          </motion.div>
-          {/* room for the phone on mobile */}
-          <div className="h-[480px] md:hidden" />
-        </div>
-
-        {/* Digital Passport card, set beside the phone */}
-        <div className="absolute left-[calc(67%+200px)] top-1/2 hidden -translate-y-1/2 xl:block">
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            whileHover={{ scale: 1.06, rotate: 2, transition: spring }}
-            className="w-40 cursor-pointer rounded-2xl border border-line bg-white p-4 shadow-[0_20px_50px_-20px_rgba(86,70,217,0.35)]"
-          >
-            <QRMark className="mx-auto h-20 w-20 text-ink" />
-            <p className="mt-3 text-xs font-medium text-deep">Digital Passport</p>
-            <p className="text-[10px] leading-snug text-muted">Scan to view this home's digital record</p>
-          </motion.div>
-        </div>
-      </section>
-    </>
-  );
-}
+          </div>
+        </section>
+      </>
+    );
+  }
 
 function Trust() {
   return (
@@ -312,103 +349,103 @@ function Owners() {
    const ZOOM_MIN = 0.6, ZOOM_MAX = 2.2;
 
    function Scan() {
-     const [section, setSection] = useState(null);
-     const [zone, setZone] = useState(null);     // invisible box over the phone: drags that start here scroll the phone
-     const [live, setLive] = useState(false);
+    const [section, setSection] = useState(null);
+    const [zone, setZone] = useState(null);     // invisible box over the phone: drags that start here scroll the phone
+    const [live, setLive] = useState(false);
    
-     // drag / zoom state shared with the 3D scene (targets: tYaw, tPitch, tZoom; the scene smooths yaw, pitch, zoom)
-     const view = useRef({ yaw: 0, pitch: 0, zoom: 1, tYaw: 0, tPitch: 0, tZoom: 1 });
-     const zoomBy = (f) => { const v = view.current; v.tZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, v.tZoom * f)); };
-     const reset = () => Object.assign(view.current, { tYaw: 0, tPitch: 0, tZoom: 1 });
+    // drag / zoom state shared with the 3D scene (targets: tYaw, tPitch, tZoom; the scene smooths yaw, pitch, zoom)
+    const view = useRef({ yaw: 0, pitch: 0, zoom: 1, tYaw: 0, tPitch: 0, tZoom: 1 });
+    const zoomBy = (f) => { const v = view.current; v.tZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, v.tZoom * f)); };
+    const reset = () => Object.assign(view.current, { tYaw: 0, tPitch: 0, tZoom: 1 });
    
-     // mount the 3D scene when the section scrolls into view, so the build-up plays in front of the visitor
-     useEffect(() => {
-       if (!section) return;
-       const io = new IntersectionObserver(([e]) => {
-         if (e.isIntersecting) { setLive(true); io.disconnect(); }
-       }, { threshold: 0.25 });
-       io.observe(section);
-       return () => io.disconnect();
-     }, [section]);
+    // mount the 3D scene when the section scrolls into view, so the build-up plays in front of the visitor
+    useEffect(() => {
+      if (!section) return;
+      const io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { setLive(true); io.disconnect(); }
+      }, { threshold: 0.25 });
+      io.observe(section);
+      return () => io.disconnect();
+    }, [section]);
    
-     const ctrl = "grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/10 text-lg text-white backdrop-blur transition-colors hover:bg-white/20";
+    const ctrl = "grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/10 text-lg text-white backdrop-blur transition-colors hover:bg-white/20";
    
-     return (
-       <section ref={setSection} id="scan" className="relative cursor-grab touch-pan-y select-none overflow-hidden bg-ink text-white">
-         <div className="pointer-events-none absolute -right-32 top-0 h-[520px] w-[520px] rounded-full bg-deep/40 blur-3xl" />
+    return (
+      <section ref={setSection} id="scan" className="relative cursor-grab touch-pan-y select-none overflow-hidden bg-ink text-white">
+        <div className="pointer-events-none absolute -right-32 top-0 h-[520px] w-[520px] rounded-full bg-deep/40 blur-3xl" />
    
-         {section && zone && live && (
-           <motion.div
-             className="pointer-events-none absolute inset-0"
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             transition={{ duration: 0.8 }}
-           >
-             <PhoneScene source={section} zone={zone} view={view} />
-           </motion.div>
-         )}
+        {section && zone && live && (
+          <motion.div
+            className="pointer-events-none absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <PhoneScene source={section} zone={zone} view={view} />
+          </motion.div>
+        )}
    
-         {/* keep the text readable over the blueprint lines */}
-         <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-ink via-ink/70 to-transparent lg:hidden" />
-         <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-ink via-ink/60 to-transparent lg:block" />
+        {/* keep the text readable over the blueprint lines */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-ink via-ink/70 to-transparent lg:hidden" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-ink via-ink/60 to-transparent lg:block" />
    
-         <div className="wrap relative py-24">
-           <div className="lg:max-w-[48%]">
-             <Reveal>
-               <h2 className="h2">Scan. Access.<br /><span className="text-[#78A9CE]">Know Your Home.</span></h2>
-               <p className="mt-5 max-w-md text-white/60">Every home gets a unique QR code — your gateway to the complete digital record of your property.</p>
-             </Reveal>
+        <div className="wrap relative py-24">
+          <div className="lg:max-w-[48%]">
+            <Reveal>
+              <h2 className="h2">Scan. Access.<br /><span className="text-[#9B8EFF]">Know Your Home.</span></h2>
+              <p className="mt-5 max-w-md text-white/60">Every home gets a unique QR code — your gateway to the complete digital record of your property.</p>
+            </Reveal>
    
-             <Reveal delay={0.1}>
-               <motion.div
-                 whileHover={{ y: -6, scale: 1.02, boxShadow: "0 24px 48px -20px rgba(0,0,0,0.5)", transition: spring }}
-                 className="mt-10 flex w-full max-w-sm cursor-pointer items-center gap-5 rounded-3xl bg-white p-5 text-ink"
-               >
-                 <QRMark className="h-24 w-24 shrink-0 text-ink" />
-                 <div>
-                   <p className="font-medium">Demo Home</p>
-                   <p className="mt-1 text-xs text-muted">Scan to view this home's digital passport</p>
-                   <p className="mt-3 rounded-lg bg-mist px-3 py-1.5 text-center text-xs font-medium text-deep">HS-DEMO-2026-001</p>
-                 </div>
-               </motion.div>
-             </Reveal>
+            <Reveal delay={0.1}>
+              <motion.div
+                whileHover={{ y: -6, scale: 1.02, boxShadow: "0 24px 48px -20px rgba(0,0,0,0.5)", transition: spring }}
+                className="mt-10 flex w-full max-w-sm cursor-pointer items-center gap-5 rounded-3xl bg-white p-5 text-ink"
+              >
+                <QRMark className="h-24 w-24 shrink-0 text-ink" />
+                <div>
+                  <p className="font-medium">Demo Home</p>
+                  <p className="mt-1 text-xs text-muted">Scan to view this home's digital passport</p>
+                  <p className="mt-3 rounded-lg bg-mist px-3 py-1.5 text-center text-xs font-medium text-deep">HS-DEMO-2026-001</p>
+                </div>
+              </motion.div>
+            </Reveal>
    
-             <motion.ul
-               className="mt-10 grid gap-5 sm:grid-cols-3"
-               variants={container}
-               initial="hidden"
-               whileInView="show"
-               viewport={viewport}
-             >
-               {scanSteps.map(([icon, t]) => (
-                 <motion.li key={t} variants={item} whileHover={rowHover} className="flex items-start gap-3">
-                   <IconBox name={icon} dark />
-                   <p className="text-sm leading-snug text-white/70">{t}</p>
-                 </motion.li>
-               ))}
-             </motion.ul>
-           </div>
+            <motion.ul
+              className="mt-10 grid gap-5 sm:grid-cols-3"
+              variants={container}
+              initial="hidden"
+              whileInView="show"
+              viewport={viewport}
+            >
+              {scanSteps.map(([icon, t]) => (
+                <motion.li key={t} variants={item} whileHover={rowHover} className="flex items-start gap-3">
+                  <IconBox name={icon} dark />
+                  <p className="text-sm leading-snug text-white/70">{t}</p>
+                </motion.li>
+              ))}
+            </motion.ul>
+          </div>
    
-           {/* room for the phone when the layout is stacked */}
-           <div className="h-[460px] lg:hidden" />
-         </div>
+          {/* room for the phone when the layout is stacked */}
+          <div className="h-[clamp(440px,calc(115vw_+_70px),590px)] lg:hidden" />
+        </div>
    
-         {/* drag here = scroll the phone screen. Drag anywhere else = rotate the model. */}
-         <div
-           ref={setZone}
-           data-phone-zone
-           className="absolute bottom-0 left-1/2 z-10 h-[470px] w-[280px] -translate-x-1/2 lg:bottom-auto lg:left-[75%] lg:top-1/2 lg:h-[min(640px,86%)] lg:w-[360px] lg:-translate-y-1/2"
-         />
+        {/* drag here = scroll the phone screen. Drag anywhere else = rotate the model. */}
+        <div
+          ref={setZone}
+          data-phone-zone
+          className="absolute bottom-0 left-1/2 z-10 h-[clamp(398px,calc(115vw_+_30px),550px)] w-[280px] -translate-x-1/2 lg:bottom-auto lg:left-[75%] lg:top-1/2 lg:h-[min(640px,86%)] lg:w-[360px] lg:-translate-y-1/2"
+        />
    
-         {/* zoom controls (pinch or Ctrl/Cmd + scroll also zoom) */}
-         <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-           <motion.button type="button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }} className={ctrl}>−</motion.button>
-           <motion.button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }} className={ctrl}>+</motion.button>
-           <motion.button type="button" aria-label="Reset view" onClick={reset} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`${ctrl} w-auto px-4 text-xs`}>Reset</motion.button>
-         </div>
-       </section>
-     );
-   }
+        {/* zoom controls (pinch or Ctrl/Cmd + scroll also zoom) */}
+        <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+          <motion.button type="button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }} className={ctrl}>−</motion.button>
+          <motion.button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }} className={ctrl}>+</motion.button>
+          <motion.button type="button" aria-label="Reset view" onClick={reset} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`${ctrl} w-auto px-4 text-xs`}>Reset</motion.button>
+        </div>
+      </section>
+    );
+  }
 
 /* In Home.js: replace the whole Cta() function with everything below.
    Uses things Home.js already has: motion, Link, QRMark, Icon, Magnetic, ease, spring, viewport. */
@@ -436,87 +473,183 @@ const PlayLogo = ({ className }) => (
   Store button. On hover a tab with the store's logo grows out of the top edge of the button,
   in the same colour, so it looks attached to it (the small curved fillets blend the corners).
 */
-function StoreButton({ small, name, Logo, label, preview }) {
+function StoreButton({ small, name, Logo, label, preview, href }) {
+  const [scope, animate] = useAnimate();
+  const [origin, setOrigin] = useState(null); // { x, y } of the click while the transition is running
+  const reduce = useReducedMotion();
+  const timer = useRef();
+ 
+  // coming back with the browser's Back button can restore this page from cache with the overlay still on
+  useEffect(() => {
+    const reset = (e) => { if (e.persisted) setOrigin(null); };
+    window.addEventListener("pageshow", reset);
+    return () => { window.removeEventListener("pageshow", reset); clearTimeout(timer.current); };
+  }, []);
+ 
+  const handleClick = (e) => {
+    if (!href || origin) { e.preventDefault(); return; }
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // let "open in new tab" clicks work normally
+    e.preventDefault();
+  
+    const openStore = () => {
+      const w = window.open(href, "_blank");
+      if (w) w.opener = null;                 // new tab can't control this page
+      else window.location.assign(href);      // pop-up blocked -> fall back to the same tab
+    };
+  
+    if (reduce) { openStore(); return; }
+  
+    const r = e.currentTarget.getBoundingClientRect();
+    const keyboard = e.detail === 0;
+    setOrigin({ x: keyboard ? r.left + r.width / 2 : e.clientX, y: keyboard ? r.top + r.height / 2 : e.clientY });
+  
+    animate(scope.current, { scale: [1, 0.92, 1] }, { duration: 0.25 });
+  
+    timer.current = setTimeout(() => {
+      openStore();
+      // this page stays open in the old tab, so close the overlay after the new tab has opened
+      timer.current = setTimeout(() => setOrigin(null), 450);
+    }, NAV_DELAY);
+  };
+ 
   return (
-    <motion.a
-      href="#top"
-      aria-label={label}
-      initial="rest"
-      animate="rest"
-      whileHover="hover"
-      whileTap="tap"
-      className="relative block"
-    >
-      {/* popup: fades up, then the 3D card inside it sways */}
-      <motion.span
-        variants={{
-          rest: { opacity: 0, y: 24, scale: 0.88 },
-          hover: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 340, damping: 24 } },
-        }}
-        style={{ transformOrigin: "50% 100%", perspective: 900 }}
-        className="pointer-events-none absolute inset-x-0 bottom-full z-20 mx-auto mb-4 block w-48"
+    <>
+      <motion.a
+        ref={scope}
+        href={href}
+        onClick={handleClick}
+        aria-label={label}
+        initial="rest"
+        animate="rest"
+        whileHover="hover"
+        whileTap="tap"
+        className="relative block cursor-pointer"
       >
-        {/* 3D card */}
+        {/* popup: fades up, then the 3D card inside it sways */}
         <motion.span
           variants={{
-            rest: { rotateY: -18, rotateX: 8 },
-            hover: {
-              rotateY: [-18, 16, -18],
-              rotateX: [8, 3, 8],
-              transition: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-            },
+            rest: { opacity: 0, y: 24, scale: 0.88 },
+            hover: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 340, damping: 24 } },
           }}
-          style={{ transformStyle: "preserve-3d" }}
-          className="relative block"
+          style={{ transformOrigin: "50% 100%", perspective: 900 }}
+          className="pointer-events-none absolute inset-x-0 bottom-full z-20 mx-auto mb-4 block w-48"
         >
-          {/* layers behind the card give it thickness */}
-          <span
-            className="absolute inset-0 rounded-2xl bg-white/40"
-            style={{ transform: "translateZ(-24px)" }}
-          />
-          <span
-            className="absolute inset-0 rounded-2xl bg-white/60"
-            style={{ transform: "translateZ(-12px)" }}
-          />
-
-          {/* front face: full image */}
-          <span
-            className="relative block rounded-2xl bg-white p-2 pt-5 shadow-[0_30px_50px_-20px_rgba(0,0,0,0.8)]"
+          <motion.span
+            variants={{
+              rest: { rotateY: -18, rotateX: 8 },
+              hover: {
+                rotateY: [-18, 16, -18],
+                rotateX: [8, 3, 8],
+                transition: { duration: 7, repeat: Infinity, ease: "easeInOut" },
+              },
+            }}
             style={{ transformStyle: "preserve-3d" }}
+            className="relative block"
           >
-            {/* store icon floats in front of the image */}
-            <motion.span
-              variants={{
-                rest: { scale: 0.5, rotate: -14 },
-                hover: { scale: 1, rotate: 0, transition: { type: "spring", stiffness: 420, damping: 16, delay: 0.1 } },
-              }}
-              style={{ z: 36 }}
-              className="absolute inset-x-0 -top-6 z-10 mx-auto grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-white shadow-[0_12px_20px_-8px_rgba(0,0,0,0.6)]"
+            {/* layers behind the card give it thickness */}
+            <span className="absolute inset-0 rounded-2xl bg-white/40" style={{ transform: "translateZ(-24px)" }} />
+            <span className="absolute inset-0 rounded-2xl bg-white/60" style={{ transform: "translateZ(-12px)" }} />
+ 
+            {/* front face: full image */}
+            <span
+              className="relative block rounded-2xl bg-white p-2 pt-5 shadow-[0_30px_50px_-20px_rgba(0,0,0,0.8)]"
+              style={{ transformStyle: "preserve-3d" }}
             >
-              <Logo className="h-7 w-7" />
-            </motion.span>
-
-            <img
-  src={preview}
-  alt={`${name} app preview`}
-  draggable={false}
-  className="block h-auto w-full rounded-xl"
-  style={{ transform: "translateZ(8px)" }}
-/>
-          </span>
+              {/* store icon floats in front of the image */}
+              <motion.span
+                variants={{
+                  rest: { scale: 0.5, rotate: -14 },
+                  hover: { scale: 1, rotate: 0, transition: { type: "spring", stiffness: 420, damping: 16, delay: 0.1 } },
+                }}
+                style={{ z: 36 }}
+                className="absolute inset-x-0 -top-6 z-10 mx-auto grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-white shadow-[0_12px_20px_-8px_rgba(0,0,0,0.6)]"
+              >
+                <Logo className="h-7 w-7" />
+              </motion.span>
+ 
+              <img
+                src={preview}
+                alt={`${name} app preview`}
+                draggable={false}
+                className="block h-auto w-full rounded-xl"
+                style={{ transform: "translateZ(8px)" }}
+              />
+            </span>
+          </motion.span>
+ 
+          <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white" />
         </motion.span>
-
-        <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white" />
-      </motion.span>
-
-      <motion.span
-        variants={{ rest: { y: 0 }, hover: { y: 0 }, tap: { scale: 0.96 } }}
-        className="relative z-10 block rounded-xl bg-white px-6 py-3 text-ink shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
-      >
-        <span className="block text-[10px] text-ink/60">{small}</span>
-        <span className="block text-base font-medium leading-tight">{name}</span>
-      </motion.span>
-    </motion.a>
+ 
+        <motion.span
+          variants={{ rest: { y: 0 }, hover: { y: 0 }, tap: { scale: 0.96 } }}
+          className="relative z-10 block rounded-xl bg-white px-6 py-3 text-ink shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
+        >
+          <span className="block text-[10px] text-ink/60">{small}</span>
+          <span className="block text-base font-medium leading-tight">{name}</span>
+        </motion.span>
+      </motion.a>
+ 
+      {/* Transition overlay. Rendered in a portal because the card above sits inside transformed
+          parents, which would break position:fixed. */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {origin && (
+              <motion.div
+                key="store-transition"
+                role="status"
+                aria-live="polite"
+                className="fixed inset-0 z-[100] grid place-items-center bg-ink text-white"
+                initial={{ clipPath: `circle(0% at ${origin.x}px ${origin.y}px)` }}
+                animate={{ clipPath: `circle(160% at ${origin.x}px ${origin.y}px)` }}
+                exit={{
+                  clipPath: `circle(0% at ${origin.x}px ${origin.y}px)`,
+                  transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] },
+                }}
+                transition={{ duration: 0.75, ease: [0.76, 0, 0.24, 1] }}
+              >
+                {/* blueprint grid + glow, matching the CTA card */}
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                  style={{
+                    backgroundImage: "linear-gradient(#78A9CE 1px, transparent 1px), linear-gradient(90deg, #78A9CE 1px, transparent 1px)",
+                    backgroundSize: "48px 48px",
+                  }}
+                />
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky/20 blur-3xl" />
+ 
+                <motion.div
+                  className="relative flex flex-col items-center px-6 text-center"
+                  initial={{ opacity: 0, y: 24, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.45, duration: 0.5, ease }}
+                >
+                  <motion.span
+                    animate={{ scale: [1, 1.08, 1] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                    className="grid h-20 w-20 place-items-center rounded-full bg-white shadow-[0_20px_40px_-12px_rgba(0,0,0,0.6)]"
+                  >
+                    <Logo className="h-11 w-11" />
+                  </motion.span>
+ 
+                  <p className="mt-6 text-sm text-white/60">Opening</p>
+                  <p className="mt-1 text-2xl font-medium tracking-tight">{name}</p>
+ 
+                  <div className="mt-6 h-1 w-48 overflow-hidden rounded-full bg-white/10">
+                    <motion.div
+                      className="h-full rounded-full bg-sky"
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ delay: 0.45, duration: (NAV_DELAY - 450) / 1000, ease: "easeInOut" }}
+                    />
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+    </>
   );
 }
 
@@ -586,19 +719,21 @@ function Cta() {
                   </Link>
                 </Magnetic>
                 <StoreButton
-  small="Download on the"
-  name="App Store"
-  Logo={AppleLogo}
-  label="Download on the App Store"
-  preview={appPreviewIos}
-/>
-<StoreButton
-  small="GET IT ON"
-  name="Google Play"
-  Logo={PlayLogo}
-  label="Get it on Google Play"
-  preview={appPreview}
-/>
+                  small="Download on the"
+                  name="App Store"
+                  Logo={AppleLogo}
+                  label="Download on the App Store"
+                  preview={appPreviewIos}
+                  href="https://apps.apple.com/us/app/spacescanner/id6767776133" // <-- Added Link
+                />
+ <StoreButton
+                  small="GET IT ON"
+                  name="Google Play"
+                  Logo={PlayLogo}
+                  label="Get it on Google Play"
+                  preview={appPreview}
+                  href="https://play.google.com/store/apps/details?id=com.vishwal.spacex&hl=en_IN" // <-- Added Link
+                />
               </motion.div>
             </div>
 

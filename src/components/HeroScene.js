@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -9,36 +9,67 @@ const ACCENT = "#4F7DAD";
 
 const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* ---------- debug logs ----------
+   Open the browser console and filter by "HeroScene".
+   Set DEBUG to false (or delete the log(...) lines) when you are done. */
+const DEBUG = true;
+const log = (...args) => DEBUG && console.log("%c[HeroScene]", "color:#4F7DAD;font-weight:600", ...args);
+
+/* ---------- mobile helpers ---------- */
+const isPhone = () => typeof window !== "undefined" && window.innerWidth < 768;
+
+/* texture scale for the phone screen: 2x on desktop, 1.5x on phones, never bigger than the GPU allows */
+const texScale = (gl, contentH) => Math.max(1, Math.min(isPhone() ? 1.5 : 2, gl.capabilities.maxTextureSize / contentH));
+
+/* true while `el` is on (or near) the screen: used to pause WebGL rendering when scrolled away (saves battery) */
+function useOnScreen(el, margin = 100) {
+  const [on, setOn] = useState(true);
+  useEffect(() => {
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setOn(e.isIntersecting), { rootMargin: `${margin}px` });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [el, margin]);
+  return on;
+}
+
 /* ---------- scrollable screen: splash image first, passport feed below ---------- */
 const LOGICAL_W = 512;
-const SCALE = 2;                                          // texture is drawn at 2x for sharpness
 const VIEW_H = Math.round((LOGICAL_W * 2.03) / 0.97);     // matches the screen's aspect ratio
 const FEED_TOP = VIEW_H + 40;
 const CONTENT_H = FEED_TOP + FEED_H;
 
+/* side by side only on desktop (>= 1024px); phones + tablets stack the phone under the text */
+function phoneLayout(size) {
+  const wide = size.width >= 1024;
+  const px = wide ? Math.min(600, size.height * 0.86) : Math.min(520, Math.max(368, size.width * 1.15));
+  return { wide, px };
+}
+
 function paintScreen(canvas, img) {
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-    ctx.fillStyle = "#1C2C35";
-    ctx.fillRect(0, 0, LOGICAL_W, CONTENT_H);
-   
-    if (img) {
-      // "cover" the first screen with the splash image
-      const r = Math.max(LOGICAL_W / img.width, VIEW_H / img.height);
-      const dw = img.width * r, dh = img.height * r;
-      ctx.drawImage(img, (LOGICAL_W - dw) / 2, (VIEW_H - dh) / 2, dw, dh);
-    }
-   
-    // small "drag" hint at the bottom of the first screen
-    ctx.fillStyle = "rgba(28,44,53,0.6)";
-    rr(ctx, 156, VIEW_H - 96, 200, 44, 22); ctx.fill();
-    ctx.font = "500 18px Rubik, sans-serif";
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "center";
-    ctx.fillText("Drag up to explore", LOGICAL_W / 2, VIEW_H - 68);
-   
-    drawFeed(ctx, LOGICAL_W, FEED_TOP);
+  const ctx = canvas.getContext("2d");
+  const scale = canvas.width / LOGICAL_W;   // 2x on desktop, less on phones (see texScale)
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.fillStyle = "#1C2C35";
+  ctx.fillRect(0, 0, LOGICAL_W, CONTENT_H);
+
+  if (img) {
+    // "cover" the first screen with the splash image
+    const r = Math.max(LOGICAL_W / img.width, VIEW_H / img.height);
+    const dw = img.width * r, dh = img.height * r;
+    ctx.drawImage(img, (LOGICAL_W - dw) / 2, (VIEW_H - dh) / 2, dw, dh);
   }
+
+  // small "drag" hint at the bottom of the first screen
+  ctx.fillStyle = "rgba(28,44,53,0.6)";
+  rr(ctx, 156, VIEW_H - 96, 200, 44, 22); ctx.fill();
+  ctx.font = "500 18px Rubik, sans-serif";
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "center";
+  ctx.fillText("Drag up to explore", LOGICAL_W / 2, VIEW_H - 68);
+
+  drawFeed(ctx, LOGICAL_W, FEED_TOP);
+}
 
 /* ---------- helpers ---------- */
 function roundedRect(w, h, r) {
@@ -265,12 +296,12 @@ function makeTower(cfg) {
     spr.scale.set(4, 0.5, 1);
     spr.position.set(cfg.w / 2 + 2.9, h * 0.8, cfg.d / 2 + 0.7);
     g.add(spr);
-    label = { cv, tex, stage: -1 };
+    label = { cv, tex, stage: -1, spr };
   }
   return { g, mGeo, gGeo, pen, label, mSegs: main.length / 6, gSegs: guide.length / 6, at: cfg.at };
 }
 
-function updateTower(tw, el, now) {
+function updateTower(tw, el, now, showLabel = true) {
   const P = clamp01((el - tw.at) / DRAW);   // overall progress of this tower
   const q = clamp01((P - 0.06) / 0.94);     // progress of the main drawing
   tw.g.visible = P > 0;
@@ -288,6 +319,7 @@ function updateTower(tw, el, now) {
   tw.pen.scale.setScalar(1 + 0.35 * Math.sin(now * 14));
 
   if (tw.label) {
+    tw.label.spr.visible = showLabel;   // on narrow (portrait) screens the label would be cropped
     const stage = P < 0.3 ? 0 : q < 0.6 ? 1 : q < 1 ? 2 : 3;
     if (stage !== tw.label.stage) {
       tw.label.stage = stage;
@@ -352,7 +384,7 @@ const Architecture = memo(function Architecture() {
     return g;
   }, []);
 
-  useFrame(({ clock, pointer }) => {
+  useFrame(({ clock, pointer, size }) => {
     const now = clock.getElapsedTime();
     if (t0.current === null) t0.current = now;
     const el = reduced ? 99 : now - t0.current;   // seconds since the page loaded
@@ -373,8 +405,8 @@ const Architecture = memo(function Architecture() {
       m.material.opacity = b.op * clamp01(p * 2.5);
     });
 
-    // tall towers are drafted line by line
-    towers.forEach((tw) => updateTower(tw, el, now));
+    // tall towers are drafted line by line (the text label only on desktop, where it is not cropped)
+    towers.forEach((tw) => updateTower(tw, el, now, size.width >= 1024));
 
     group.current.rotation.y = Math.sin(t * 0.08) * 0.12 + pointer.x * 0.05;
     group.current.position.x = -pointer.x * 0.5;
@@ -395,113 +427,154 @@ const Architecture = memo(function Architecture() {
 
 /* ---------- scene ---------- */
 function Scene({ source }) {
-    const rig = useRef();
-    const spin = useRef();
-    const gl = useThree((state) => state.gl);
-    const size = useThree((state) => state.size);
-    const halo = useMemo(haloTexture, []);
-   
-    // the phone screen: one tall canvas texture, scrolled by changing its UV offset
-    const tex = useMemo(() => {
-      const canvas = document.createElement("canvas");
-      canvas.width = LOGICAL_W * SCALE;
-      canvas.height = CONTENT_H * SCALE;
-      paintScreen(canvas, null);
-      const t = new THREE.CanvasTexture(canvas);
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = gl.capabilities.getMaxAnisotropy();
-      t.repeat.set(1, VIEW_H / CONTENT_H);
-      t.offset.set(0, 1 - VIEW_H / CONTENT_H);
-      return t;
-    }, [gl]);
-   
-    // load the splash image, then repaint (and again when Rubik is ready)
-    useEffect(() => {
-      let img = null, alive = true;
-      const repaint = () => { if (alive) { paintScreen(tex.image, img); tex.needsUpdate = true; } };
-      const im = new Image();
-      im.onload = () => { img = im; repaint(); };
-      im.onerror = () => console.warn("Could not load src/assets/app-splash.jpeg");
-      im.src = screenImage;
-      document.fonts?.ready.then(repaint);
-      return () => { alive = false; };
-    }, [tex]);
-   
-    // phone height on screen in px (matches the sizing in useFrame below)
-    const screenPx = () => {
-      const wide = size.width >= 768;
-      const px = wide ? Math.min(600, size.height * 0.86) : 440;
-      return (px * 2.03) / 2.1;
-    };
-   
-    // Click-drag scrolls the phone. Wheel/touch are off so the page itself keeps scrolling.
-    const scroll = usePhoneScroll({
-      groupRef: spin,
-      element: source,
-      contentH: CONTENT_H,
-      viewH: VIEW_H,
-      getScreenPx: screenPx,
-      wheel: false,
-      touch: false,
-    });
-   
-    useFrame(({ clock, pointer, viewport, size }, delta) => {
-      const t = reduced ? 0 : clock.getElapsedTime();
-   
-      // smooth scroll
-      const s = scroll.current;
-      s.current += (s.target - s.current) * (1 - Math.exp(-delta * 9));
-      tex.offset.y = 1 - tex.repeat.y - s.current / CONTENT_H;
-   
-      // size and place the phone from real pixel sizes so it fits every screen
-      const wide = size.width >= 768;
-      const px = wide ? Math.min(600, size.height * 0.86) : 440;
-      const k = viewport.height / size.height;
-      rig.current.scale.setScalar((px * k) / 2.1);
-   
-      // the hero is full width: centre the phone at 67% of the width on wide screens
-      rig.current.position.set(
-        wide ? size.width * 0.17 * k : 0,
-        wide ? 0 : -(size.height / 2 - 30 - px / 2) * k,
-        0
-      );
-   
-      spin.current.rotation.y = -0.28 + Math.sin(t * 0.45) * 0.14 + pointer.x * 0.2;
-      spin.current.rotation.x = 0.06 - pointer.y * 0.08;
-      spin.current.position.y = Math.sin(t * 0.9) * 0.04;
-    });
-   
-    return (
-      <>
-        <fog attach="fog" args={["#F5F6FA", 9, 24]} />
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[3, 5, 4]} intensity={1.1} />
-        <Env />
-        <Architecture />
-        <group ref={rig}>
-          <mesh position={[0, 0, -0.7]}>
-            <planeGeometry args={[5.5, 5.5]} />
-            <meshBasicMaterial map={halo} transparent depthWrite={false} fog={false} />
-          </mesh>
-          <group ref={spin}>
-            <Phone tex={tex} />
-          </group>
-        </group>
-      </>
-    );
-  }
+  const rig = useRef();
+  const spin = useRef();
+  const firstFrame = useRef(true);
+  const gl = useThree((state) => state.gl);
+  const size = useThree((state) => state.size);
+  const halo = useMemo(haloTexture, []);
 
-  export default function HeroScene({ source }) {
-    return (
-      <Canvas
-        eventSource={source}
-        eventPrefix="client"
-        camera={{ position: [0, 0.6, 7], fov: 32 }}
-        dpr={[1.5, 2]}
-        gl={{ antialias: true, alpha: true }}
-        aria-label="3D iPhone showing the HomeScanner app in front of an architectural blueprint skyline. Drag the phone to scroll its screen."
-      >
-        <Scene source={source} />
-      </Canvas>
-    );
-  }
+  // the phone screen: one tall canvas texture, scrolled by changing its UV offset
+  const tex = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    const sc = texScale(gl, CONTENT_H);
+    canvas.width = Math.round(LOGICAL_W * sc);
+    canvas.height = Math.round(CONTENT_H * sc);
+    log("screen texture", {
+      scale: sc,
+      canvasPx: `${canvas.width}x${canvas.height}`,
+      logicalPx: `${LOGICAL_W}x${CONTENT_H}`,
+      gpuMaxTexture: gl.capabilities.maxTextureSize,
+    });
+    paintScreen(canvas, null);
+    const t = new THREE.CanvasTexture(canvas);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = gl.capabilities.getMaxAnisotropy();
+    t.repeat.set(1, VIEW_H / CONTENT_H);
+    t.offset.set(0, 1 - VIEW_H / CONTENT_H);
+    return t;
+  }, [gl]);
+
+  // load the splash image, then repaint (and again when Rubik is ready)
+  useEffect(() => {
+    let img = null, alive = true;
+    const repaint = () => { if (alive) { paintScreen(tex.image, img); tex.needsUpdate = true; } };
+    const im = new Image();
+    im.onload = () => { img = im; log("splash image loaded", `${im.width}x${im.height}`); repaint(); };
+    im.onerror = () => console.warn("[HeroScene] Could not load src/assets/app-splash.jpeg");
+    im.src = screenImage;
+    document.fonts?.ready.then(() => { log("fonts ready, repainting screen"); repaint(); });
+    return () => { alive = false; };
+  }, [tex]);
+
+  // log the layout whenever the canvas is resized (rotate the phone, resize the window, devtools device mode ...)
+  useEffect(() => {
+    const { wide, px } = phoneLayout(size);
+    log("canvas size", {
+      width: size.width,
+      height: size.height,
+      layout: wide ? "side-by-side (desktop)" : "stacked: text on top, phone below",
+      phoneHeightPx: Math.round(px),
+      devicePixelRatio: window.devicePixelRatio,
+      isPhone: isPhone(),
+    });
+  }, [size]);
+
+  // phone height on screen in px (matches the sizing in useFrame below)
+  const screenPx = () => (phoneLayout(size).px * 2.03) / 2.1;
+
+  // Click-drag scrolls the phone. Wheel/touch are off so the page itself keeps scrolling.
+  const scroll = usePhoneScroll({
+    groupRef: spin,
+    element: source,
+    contentH: CONTENT_H,
+    viewH: VIEW_H,
+    getScreenPx: screenPx,
+    wheel: false,
+    touch: false,
+  });
+
+  useFrame(({ clock, pointer, viewport, size }, delta) => {
+    const t = reduced ? 0 : clock.getElapsedTime();
+
+    // smooth scroll
+    const s = scroll.current;
+    s.current += (s.target - s.current) * (1 - Math.exp(-delta * 9));
+    tex.offset.y = 1 - tex.repeat.y - s.current / CONTENT_H;
+
+    // size and place the phone from real pixel sizes so it fits every screen
+    const { wide, px } = phoneLayout(size);
+    const k = viewport.height / size.height;
+    rig.current.scale.setScalar((px * k) / 2.1);
+
+    // desktop: the hero is full width, so centre the phone at 67% of the width.
+    // phones + tablets: phone sits at the bottom of the section, under the text.
+    const x = wide ? size.width * 0.17 * k : 0;
+    const y = wide ? 0 : -(size.height / 2 - 30 - px / 2) * k;
+    rig.current.position.set(x, y, 0);
+
+    if (firstFrame.current) {
+      firstFrame.current = false;
+      log("first frame", {
+        worldViewport: `${viewport.width.toFixed(2)} x ${viewport.height.toFixed(2)}`,
+        phoneScale: +rig.current.scale.x.toFixed(3),
+        phonePosition: { x: +x.toFixed(2), y: +y.toFixed(2) },
+        reducedMotion: reduced,
+      });
+    }
+
+    spin.current.rotation.y = -0.28 + Math.sin(t * 0.45) * 0.14 + pointer.x * 0.2;
+    spin.current.rotation.x = 0.06 - pointer.y * 0.08;
+    spin.current.position.y = Math.sin(t * 0.9) * 0.04;
+  });
+
+  return (
+    <>
+      <fog attach="fog" args={["#F5F6FA", 9, 24]} />
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[3, 5, 4]} intensity={1.1} />
+      <Env />
+      <Architecture />
+      <group ref={rig}>
+        <mesh position={[0, 0, -0.7]}>
+          <planeGeometry args={[5.5, 5.5]} />
+          <meshBasicMaterial map={halo} transparent depthWrite={false} fog={false} />
+        </mesh>
+        <group ref={spin}>
+          <Phone tex={tex} />
+        </group>
+      </group>
+    </>
+  );
+}
+
+export default function HeroScene({ source }) {
+  const visible = useOnScreen(source);   // stop rendering while the hero is off-screen
+
+  useEffect(() => { log("mounted", { section: source?.id || source?.tagName }); }, [source]);
+  useEffect(() => { log(visible ? "on screen: rendering" : "off screen: rendering paused"); }, [visible]);
+
+  return (
+    <Canvas
+      frameloop={visible ? "always" : "never"}
+      eventSource={source}
+      eventPrefix="client"
+      camera={{ position: [0, 0.6, 7], fov: 32 }}
+      dpr={isPhone() ? [1, 1.5] : [1.5, 2]}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      onCreated={({ gl }) => {
+        log("WebGL ready", {
+          webgl2: gl.capabilities.isWebGL2,
+          maxTextureSize: gl.capabilities.maxTextureSize,
+          maxAnisotropy: gl.capabilities.getMaxAnisotropy(),
+          pixelRatio: gl.getPixelRatio(),
+        });
+        gl.domElement.addEventListener("webglcontextlost", () => console.warn("[HeroScene] WebGL context lost (common on low-memory phones)"));
+        gl.domElement.addEventListener("webglcontextrestored", () => log("WebGL context restored"));
+      }}
+      aria-label="3D iPhone showing the HomeScanner app in front of an architectural blueprint skyline. Drag the phone to scroll its screen."
+    >
+      <Scene source={source} />
+    </Canvas>
+  );
+}
