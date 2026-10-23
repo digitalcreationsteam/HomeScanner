@@ -475,11 +475,11 @@ const PlayLogo = ({ className }) => (
 */
 function StoreButton({ small, name, Logo, label, preview, href }) {
   const [scope, animate] = useAnimate();
-  const [origin, setOrigin] = useState(null); // { x, y } of the click while the transition is running
+  const [origin, setOrigin] = useState(null); // { x, y } of the click while the transition is showing
   const reduce = useReducedMotion();
   const timer = useRef();
  
-  // coming back with the browser's Back button can restore this page from cache with the overlay still on
+  // coming back with the browser's Back button can restore this page with the overlay still on
   useEffect(() => {
     const reset = (e) => { if (e.persisted) setOrigin(null); };
     window.addEventListener("pageshow", reset);
@@ -490,24 +490,25 @@ function StoreButton({ small, name, Logo, label, preview, href }) {
     if (!href || origin) { e.preventDefault(); return; }
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // let "open in new tab" clicks work normally
     e.preventDefault();
-  
+ 
     const openStore = () => {
       const w = window.open(href, "_blank");
-      if (w) w.opener = null;                 // new tab can't control this page
-      else window.location.assign(href);      // pop-up blocked -> fall back to the same tab
+      if (w) w.opener = null;                // new tab can't control this page
+      else window.location.assign(href);     // pop-up blocked -> fall back to the same tab
     };
-  
+ 
     if (reduce) { openStore(); return; }
-  
+ 
+    // circle grows from the click point (Enter key presses fall back to the button's centre)
     const r = e.currentTarget.getBoundingClientRect();
     const keyboard = e.detail === 0;
     setOrigin({ x: keyboard ? r.left + r.width / 2 : e.clientX, y: keyboard ? r.top + r.height / 2 : e.clientY });
-  
+ 
     animate(scope.current, { scale: [1, 0.92, 1] }, { duration: 0.25 });
-  
+ 
     timer.current = setTimeout(() => {
       openStore();
-      // this page stays open in the old tab, so close the overlay after the new tab has opened
+      // this page stays open in the old tab, so close the overlay once the new tab has opened
       timer.current = setTimeout(() => setOrigin(null), 450);
     }, NAV_DELAY);
   };
@@ -517,6 +518,8 @@ function StoreButton({ small, name, Logo, label, preview, href }) {
       <motion.a
         ref={scope}
         href={href}
+        target="_blank"
+        rel="noopener noreferrer"
         onClick={handleClick}
         aria-label={label}
         initial="rest"
@@ -525,67 +528,121 @@ function StoreButton({ small, name, Logo, label, preview, href }) {
         whileTap="tap"
         className="relative block cursor-pointer"
       >
-        {/* popup: fades up, then the 3D card inside it sways */}
+        {/* hover popup: a floating phone showing the app. Fades up, then the phone sways in 3D. */}
         <motion.span
           variants={{
-            rest: { opacity: 0, y: 24, scale: 0.88 },
-            hover: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 340, damping: 24 } },
+            rest: { opacity: 0, y: 28, scale: 0.86 },
+            hover: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 320, damping: 24 } },
           }}
-          style={{ transformOrigin: "50% 100%", perspective: 900 }}
-          className="pointer-events-none absolute inset-x-0 bottom-full z-20 mx-auto mb-4 block w-48"
+          style={{ transformOrigin: "50% 100%", perspective: 1000 }}
+          className="pointer-events-none absolute inset-x-0 bottom-full z-20 mx-auto mb-6 block w-[9.5rem]"
         >
+          {/* soft glow + ground shadow */}
+          <span className="absolute -inset-8 rounded-full bg-sky/30 blur-3xl" />
+          <span className="absolute -bottom-4 left-1/2 h-3 w-24 -translate-x-1/2 rounded-full bg-black/50 blur-md" />
+ 
           <motion.span
             variants={{
-              rest: { rotateY: -18, rotateX: 8 },
+              rest: { rotateY: -14, rotateX: 6 },
               hover: {
-                rotateY: [-18, 16, -18],
-                rotateX: [8, 3, 8],
+                rotateY: [-14, 12, -14],
+                rotateX: [6, 2, 6],
                 transition: { duration: 7, repeat: Infinity, ease: "easeInOut" },
               },
             }}
             style={{ transformStyle: "preserve-3d" }}
             className="relative block"
           >
-            {/* layers behind the card give it thickness */}
-            <span className="absolute inset-0 rounded-2xl bg-white/40" style={{ transform: "translateZ(-24px)" }} />
-            <span className="absolute inset-0 rounded-2xl bg-white/60" style={{ transform: "translateZ(-12px)" }} />
+            {/* depth layers behind the phone */}
+            <span className="absolute inset-0 rounded-[2rem] bg-sky/25" style={{ transform: "translateZ(-22px)" }} />
+            <span className="absolute inset-0 rounded-[2rem] bg-sky/40" style={{ transform: "translateZ(-11px)" }} />
  
-            {/* front face: full image */}
+            {/* phone body */}
             <span
-              className="relative block rounded-2xl bg-white p-2 pt-5 shadow-[0_30px_50px_-20px_rgba(0,0,0,0.8)]"
+              className="relative block rounded-[2rem] bg-gradient-to-b from-[#52646f] via-[#2a3a45] to-[#16232b] p-[5px] shadow-[0_32px_60px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/25"
               style={{ transformStyle: "preserve-3d" }}
             >
-              {/* store icon floats in front of the image */}
-              <motion.span
-                variants={{
-                  rest: { scale: 0.5, rotate: -14 },
-                  hover: { scale: 1, rotate: 0, transition: { type: "spring", stiffness: 420, damping: 16, delay: 0.1 } },
-                }}
-                style={{ z: 36 }}
-                className="absolute inset-x-0 -top-6 z-10 mx-auto grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-white shadow-[0_12px_20px_-8px_rgba(0,0,0,0.6)]"
-              >
-                <Logo className="h-7 w-7" />
-              </motion.span>
+              {/* side buttons */}
+              <span className="absolute -left-[3px] top-[4.2rem] h-6 w-[3px] rounded-l bg-[#3b4c58]" />
+              <span className="absolute -left-[3px] top-[6.2rem] h-10 w-[3px] rounded-l bg-[#3b4c58]" />
+              <span className="absolute -right-[3px] top-[5.4rem] h-14 w-[3px] rounded-r bg-[#3b4c58]" />
  
-              <img
-                src={preview}
-                alt={`${name} app preview`}
-                draggable={false}
-                className="block h-auto w-full rounded-xl"
-                style={{ transform: "translateZ(8px)" }}
-              />
+              {/* screen */}
+              <span className="relative block aspect-[9/19] overflow-hidden rounded-[1.6rem] bg-ink">
+                <motion.img
+                  variants={{ rest: { scale: 1.08 }, hover: { scale: 1, transition: { duration: 0.9, ease } } }}
+                  src={preview}
+                  alt={`${name} app preview`}
+                  draggable={false}
+                  className="absolute inset-0 h-full w-full object-cover object-top"
+                />
+                {/* dynamic island + home bar */}
+                <span className="absolute left-1/2 top-2 z-10 h-[14px] w-[46px] -translate-x-1/2 rounded-full bg-black" />
+                <span className="absolute bottom-1.5 left-1/2 z-10 h-1 w-14 -translate-x-1/2 rounded-full bg-white/70" />
+                {/* glass reflection */}
+                <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-transparent" />
+              </span>
             </span>
-          </motion.span>
  
-          <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white" />
+            {/* floating chips, lifted off the phone in 3D */}
+            <motion.span
+              variants={{
+                rest: { scale: 0.4, rotate: -16, opacity: 0 },
+                hover: { scale: 1, rotate: 0, opacity: 1, transition: { type: "spring", stiffness: 420, damping: 16, delay: 0.12 } },
+              }}
+              style={{ z: 46 }}
+              className="absolute -right-5 bottom-14 grid h-12 w-12 place-items-center rounded-full bg-white shadow-[0_14px_24px_-8px_rgba(0,0,0,0.7)] ring-2 ring-sky/60"
+            >
+              <Logo className="h-7 w-7" />
+            </motion.span>
+ 
+            <motion.span
+              variants={{
+                rest: { x: 12, opacity: 0 },
+                hover: { x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 22, delay: 0.2 } },
+              }}
+              style={{ z: 34 }}
+              className="absolute -left-7 top-10 flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 bg-ink/85 px-2.5 py-1 text-[10px] font-medium text-white shadow-lg backdrop-blur"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-sky" />
+              App preview
+            </motion.span>
+          </motion.span>
         </motion.span>
  
+        {/* the button itself: frosted glass pill */}
         <motion.span
-          variants={{ rest: { y: 0 }, hover: { y: 0 }, tap: { scale: 0.96 } }}
-          className="relative z-10 block rounded-xl bg-white px-6 py-3 text-ink shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
+          variants={{ rest: { y: 0 }, hover: { y: -3 }, tap: { scale: 0.96 } }}
+          transition={{ type: "spring", stiffness: 400, damping: 24 }}
+          className="relative z-10 flex min-w-[13.5rem] items-center gap-3 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.07] py-2.5 pl-2.5 pr-3 text-white shadow-[0_14px_32px_-14px_rgba(0,0,0,0.75)] backdrop-blur transition-colors duration-300 hover:border-sky/60 hover:bg-white/[0.12]"
         >
-          <span className="block text-[10px] text-ink/60">{small}</span>
-          <span className="block text-base font-medium leading-tight">{name}</span>
+          {/* shine that sweeps across on hover */}
+          <motion.span
+            variants={{ rest: { x: "-120%" }, hover: { x: "420%", transition: { duration: 0.9, ease: "easeInOut" } } }}
+            className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+          />
+ 
+          {/* store logo in a white chip */}
+          <motion.span
+            variants={{ rest: { rotate: 0, scale: 1 }, hover: { rotate: -8, scale: 1.08, transition: spring } }}
+            className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white shadow-[0_6px_14px_-6px_rgba(0,0,0,0.6)]"
+          >
+            <Logo className="h-6 w-6" />
+          </motion.span>
+ 
+          {/* label + store name */}
+          <span className="relative flex flex-col text-left leading-tight">
+            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/55">{small}</span>
+            <span className="text-[17px] font-semibold tracking-tight">{name}</span>
+          </span>
+ 
+          {/* "opens in a new tab" arrow */}
+          <motion.span
+            variants={{ rest: { x: 0, y: 0, opacity: 0.7 }, hover: { x: 3, y: -3, opacity: 1, transition: spring } }}
+            className="relative ml-auto grid h-8 w-8 place-items-center rounded-full bg-white/10 text-sky"
+          >
+            <Icon name="arrow" className="h-4 w-4 -rotate-45" />
+          </motion.span>
         </motion.span>
       </motion.a>
  
@@ -652,6 +709,8 @@ function StoreButton({ small, name, Logo, label, preview, href }) {
     </>
   );
 }
+ 
+ 
 
 function Cta() {
   const points = ["A permanent digital record for every home", "QR access for homeowners, anytime", "Smoother, more transparent handovers"];
@@ -712,29 +771,31 @@ function Cta() {
                 ))}
               </motion.ul>
 
-              <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.24 }} className="mt-10 flex flex-wrap items-end gap-4 pt-10">
-                <Magnetic>
-                  <Link to="/demo" className="btn btn-accent border border-sky">
-                    Book a Builder Demo <Icon name="arrow" className="h-4 w-4" />
-                  </Link>
-                </Magnetic>
-                <StoreButton
-                  small="Download on the"
-                  name="App Store"
-                  Logo={AppleLogo}
-                  label="Download on the App Store"
-                  preview={appPreviewIos}
-                  href="https://apps.apple.com/us/app/spacescanner/id6767776133" // <-- Added Link
-                />
- <StoreButton
-                  small="GET IT ON"
-                  name="Google Play"
-                  Logo={PlayLogo}
-                  label="Get it on Google Play"
-                  preview={appPreview}
-                  href="https://play.google.com/store/apps/details?id=com.vishwal.spacex&hl=en_IN" // <-- Added Link
-                />
-              </motion.div>
+              <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.24 }} className="mt-10 flex flex-wrap items-center gap-4 pt-10">
+  <Magnetic>
+    <Link to="/demo" className="btn btn-accent border border-sky !px-7 !py-5">
+      Book a Builder Demo <Icon name="arrow" className="h-4 w-4" />
+    </Link>
+  </Magnetic>
+
+  <StoreButton
+    small="Download on the"
+    name="App Store"
+    Logo={AppleLogo}
+    label="Download on the App Store"
+    preview={appPreviewIos}
+    href="https://apps.apple.com/us/app/spacescanner/id6767776133"
+  />
+
+  <StoreButton
+    small="GET IT ON"
+    name="Google Play"
+    Logo={PlayLogo}
+    label="Get it on Google Play"
+    preview={appPreview}
+    href="https://play.google.com/store/apps/details?id=com.vishwal.spacex&hl=en_IN"
+  />
+</motion.div>
             </div>
 
             {/* visual: a stack of digital passport cards */}
