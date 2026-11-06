@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config({ path: "../env.local" });
+require("dotenv").config({ path: "../.env" });
 
 const connectDB = require("./mongodb");
 const demoRoutes = require("./route/demo");
@@ -9,7 +9,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ["https://spacexstudio.com", "http://localhost:3000"], // Add your actual live domain here
+  origin: ["https://api.spacexstudio.com", "http://localhost:3000"], // Add your actual live domain here
   methods: ["GET", "POST"],
 }));
 app.use(express.json());
