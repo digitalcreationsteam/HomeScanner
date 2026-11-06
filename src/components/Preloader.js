@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, animate, useMotionValue, useTransform } from "framer-motion";
 
 const ease = [0.76, 0, 0.24, 1];
-const NAME = "HomeScanner".split("");
+const NAME = "SpaceScanner".split("");
 
 const letters = { hidden: {}, show: { transition: { staggerChildren: 0.045, delayChildren: 0.25 } } };
 const letter = { hidden: { y: "110%" }, show: { y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } } };
@@ -155,7 +155,7 @@ export default function Preloader({ onReveal }) {
             <div className="flex flex-col items-center">
               <House progress={progress} />
 
-              <motion.h1 variants={letters} initial="hidden" animate="show" className="mt-4 flex overflow-hidden text-4xl font-medium tracking-tight md:text-5xl" aria-label="HomeScanner">
+              <motion.h1 variants={letters} initial="hidden" animate="show" className="mt-4 flex overflow-hidden text-4xl font-medium tracking-tight md:text-5xl" aria-label="SpaceScanner">
                 {NAME.map((c, i) => (
                   <motion.span key={i} variants={letter} className="inline-block">{c}</motion.span>
                 ))}

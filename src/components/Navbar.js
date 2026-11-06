@@ -1,165 +1,96 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import Icon from "./Icon";
+import { motion, AnimatePresence } from "framer-motion";
 import Magnetic from "./Magnetic";
+
+// 👇 UPDATE THIS PATH TO YOUR ACTUAL LOGO
+import LogoImage from "../assets/final.png"; 
+
 const links = [
   ["Product", "/"],
   ["For Builders", "/#builders"],
   ["For Homeowners", "/#homeowners"],
   ["How It Works", "/#how"],
   ["About", "/about"],
+  ["Terms & Conditions", "/terms"],
 ];
 
-const ease = [0.22, 1, 0.36, 1];
-
-const panel = {
-  hidden: { opacity: 0, scale: 0.92, y: -14 },
-  show: {
-    opacity: 1, scale: 1, y: 0,
-    transition: { duration: 0.35, ease, when: "beforeChildren", staggerChildren: 0.05, delayChildren: 0.08 },
-  },
-  exit: { opacity: 0, scale: 0.94, y: -10, transition: { duration: 0.22, ease: "easeIn" } },
-};
-
-const row = {
-  hidden: { opacity: 0, x: 14 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.35, ease } },
-};
-
 export default function Navbar() {
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const close = () => setOpen(false);
+  const close = () => setMobileOpen(false);
 
-  // close on route / hash change
-  useEffect(() => { setOpen(false); }, [location.pathname, location.hash]);
-
-  // Esc to close + lock page scroll while open
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+  useEffect(() => { 
+    setMobileOpen(false); 
+  }, [location.pathname, location.hash]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-paper/80 backdrop-blur">
-      <div className="wrap flex h-16 items-center justify-between">
-        <Link to="/" onClick={close} className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-deep text-white"><Icon name="qr" className="h-5 w-5" /></span>
+    <header className="sticky top-0 z-50 border-b border-line/70 bg-paper/80 backdrop-blur">
+      <div className="wrap flex h-20 items-center justify-between">
+        
+        {/* Logo */}
+        <Link to="/" onClick={close} className="flex items-center gap-3 shrink-0 group">
+          <img src={LogoImage} alt="Logo" className="h-9 w-9 rounded-xl object-cover" />
           <span className="leading-tight">
-            <span className="block text-lg font-medium tracking-tight">HomeScanner</span>
+            <span className="block text-lg font-medium tracking-tight">SpaceScanner</span>
             <span className="hidden text-[10px] text-muted sm:block">The digital passport of your home.</span>
           </span>
         </Link>
 
+        {/* Desktop Links (Hidden on Mobile) */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+          {links.map(([label, to]) => (
+            <Link key={label} to={to} className="text-sm font-medium text-muted hover:text-[#4F7DAD] transition-colors">
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right Side (Demo Button + Mobile Toggle) */}
         <div className="flex items-center gap-3">
-        <Magnetic className="hidden sm:inline-block">
-  <Link to="/demo" className="btn btn-accent !py-2.5">Book a Demo</Link>
-</Magnetic>
-<Magnetic strength={0.25}>
-          {/* Menu pill */}
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            className="group flex items-center gap-3 rounded-full border border-line bg-white py-1.5 pl-5 pr-1.5 shadow-sm transition-shadow hover:shadow-md"
+          <Link to="/demo" className="hidden sm:inline-flex btn btn-accent !py-2.5">Book a Demo</Link>
+          
+          {/* Mobile Hamburger Menu Button */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="lg:hidden flex flex-col justify-center items-center w-11 h-11 rounded-full border border-line bg-white shadow-sm"
+            aria-label="Toggle menu"
           >
-            <span className="text-sm font-semibold text-ink">Menu</span>
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-deep transition-colors group-hover:bg-ink">
-              <span className="flex flex-col gap-[5px]">
-                <span className="block h-[1.5px] w-4 rounded bg-white transition-transform group-hover:translate-x-0.5" />
-                <span className="block h-[1.5px] w-4 rounded bg-white transition-transform group-hover:-translate-x-0.5" />
-              </span>
-            </span>
-          </motion.button>
-          </Magnetic>
+            <span className={`block h-[1.5px] w-5 bg-ink transition-transform ${mobileOpen ? 'rotate-45 translate-y-[2px]' : '-translate-y-1'}`} />
+            <span className={`block h-[1.5px] w-5 bg-ink transition-transform ${mobileOpen ? '-rotate-45 -translate-y-[2px]' : 'translate-y-1'}`} />
+          </button>
         </div>
       </div>
 
-      {/* Portal: the header's backdrop-blur would otherwise trap position:fixed children */}
-      {createPortal(
-        <AnimatePresence>
-          {open && (
-            <>
-              {/* backdrop */}
-              <motion.div
-                key="backdrop"
-                className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-[2px]"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                onClick={close}
-              />
-
-              {/* modal card */}
-              <motion.div
-                key="panel"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Site menu"
-                variants={panel}
-                initial="hidden"
-                animate="show"
-                exit="exit"
-                style={{ transformOrigin: "top right" }}
-                className="fixed right-4 top-4 z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-[2rem] bg-white shadow-[0_30px_80px_-20px_rgba(15,15,25,0.35)] md:right-8 md:top-6"
-              >
-                <button
+      {/* Mobile Dropdown Menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="lg:hidden overflow-hidden bg-white border-t border-line"
+          >
+            <nav className="flex flex-col px-6 py-4 space-y-4">
+              {links.map(([label, to]) => (
+                <Link
+                  key={label}
+                  to={to}
                   onClick={close}
-                  aria-label="Close menu"
-                  className="absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full border border-line bg-white text-ink transition-all hover:rotate-90 hover:border-ink"
+                  className="text-lg font-medium text-ink hover:text-[#4F7DAD]"
                 >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
-
-                <nav className="px-6 pb-2 pt-5">
-                  <ul>
-                    {links.map(([label, to], i) => (
-                      <motion.li key={label} variants={row} className="border-b border-dashed border-line last:border-b-0">
-                        <Link
-                          to={to}
-                          onClick={close}
-                          className="group flex items-center gap-4 py-4 pr-10 text-muted transition-colors hover:text-ink focus-visible:text-ink"
-                        >
-                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-paper text-sm font-semibold transition-colors group-hover:bg-deep group-hover:text-white group-focus-visible:bg-deep group-focus-visible:text-white">
-                            {i + 1}
-                          </span>
-                          <span className="text-xl font-semibold tracking-tight">{label}</span>
-                        </Link>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </nav>
-
-                <motion.div variants={row} className="border-t border-line p-4">
-                  <Link
-                    to="/demo"
-                    onClick={close}
-                    className="flex items-center justify-center gap-3 rounded-full bg-deep py-3 pl-3 pr-6 text-lg font-semibold text-white transition-colors hover:bg-ink"
-                  >
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-white/15">
-                      <Icon name="phone" className="h-4 w-4" />
-                    </span>
-                    Book a Demo
-                  </Link>
-                </motion.div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+                  {label}
+                </Link>
+              ))}
+              <div className="pt-4 border-t border-line sm:hidden">
+                <Link to="/demo" onClick={close} className="btn btn-accent w-full text-center !py-3">
+                  Book a Demo
+                </Link>
+              </div>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

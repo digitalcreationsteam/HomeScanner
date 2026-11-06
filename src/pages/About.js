@@ -10,7 +10,7 @@ export default function About() {
           The digital passport <span className="text-accent">of your home.</span>
         </h1>
         <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-          HomeScanner creates a permanent digital record of your property — materials, appliances, warranties, installations and maintenance information, all in one place.
+          SpaceScanner creates a permanent digital record of your property — materials, appliances, warranties, installations and maintenance information, all in one place.
         </p>
       </motion.div>
       <div id="security" className="mt-16 grid gap-8 border-t border-line pt-10 sm:grid-cols-3">

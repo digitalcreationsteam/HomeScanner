@@ -73,7 +73,7 @@ export function drawFeed(ctx, W, top) {
   });
 
   text("You're all caught up", W / 2, y + 40, "400 20px Rubik, sans-serif", "#8FA3B1", "center");
-  text("HomeScanner", W / 2, y + 76, "500 18px Rubik, sans-serif", "#78A9CE", "center");
+  text("SpaceScanner", W / 2, y + 76, "500 18px Rubik, sans-serif", "#78A9CE", "center");
 }
 
 /**

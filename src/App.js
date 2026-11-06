@@ -9,6 +9,7 @@ import Demo from "./pages/Demo";
 import Preloader from "./components/Preloader";
 import SmoothScroll, { SECTIONS } from "./components/SmoothScroll";
 import Cursor from "./components/Cursor";
+import Terms from "./pages/Terms";
 
 export default function App() {
   const location = useLocation();
@@ -43,6 +44,7 @@ export default function App() {
               <Routes location={location}>
                 <Route path="/about" element={<About />} />
                 <Route path="/demo" element={<Demo />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route path="*" element={<Home />} />
               </Routes>
             </motion.main>

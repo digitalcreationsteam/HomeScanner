@@ -11,7 +11,7 @@ export default function Homeowners() {
         ["Save time and money", "Find the right document fast and avoid unnecessary repairs."],
         ["Built to last", "Keep a clear history that adds confidence when you sell."],
       ]}
-      closing="Ask your builder about HomeScanner."
+      closing="Ask your builder about SpaceScanner."
     />
   );
 }

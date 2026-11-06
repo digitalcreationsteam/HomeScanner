@@ -273,7 +273,7 @@ export default function PhoneDuoScene({ source, zone, view }) {
       camera={{ position: [0, 0.6, 7], fov: 32 }}
       dpr={[1.5, 2]}
       gl={{ antialias: true, alpha: true }}
-      aria-label="Two 3D iPhones showing the HomeScanner app. Drag a phone to scroll its screen."
+      aria-label="Two 3D iPhones showing the SpaceScanner app. Drag a phone to scroll its screen."
     >
       <Scene source={source} zone={zone} view={view} />
     </Canvas>

@@ -6,6 +6,10 @@ import Magnetic from "./Magnetic";
 import FooterModels, { MODEL_NAMES } from "./FooterModels";
 import { footerCols } from "../data";
 
+// 👇 IMPORT YOUR LOGO IMAGE HERE
+// (Make sure this path matches your actual file location)
+import LogoImage from "../assets/final.png"; 
+
 const ease = [0.22, 1, 0.36, 1];
 const spring = { type: "spring", stiffness: 320, damping: 20 };
 const viewport = { once: true, margin: "-60px" };
@@ -13,7 +17,7 @@ const viewport = { once: true, margin: "-60px" };
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease } } };
 
-const WORD = "HomeScanner".split("");
+const WORD = "SpaceScanner".split("");
 const textGradient = (a) => `linear-gradient(180deg, rgba(120,169,206,${a}) 0%, rgba(120,169,206,0) 85%)`;
 
 /* small inline social icons */
@@ -79,14 +83,22 @@ export default function Footer() {
         >
           <motion.div variants={item} className="max-w-xs">
             <Link to="/" className="flex items-center gap-3">
-              <motion.span
+              
+              {/* 👇 REPLACED ICON WITH IMAGE HERE 👇 */}
+              <motion.div
                 whileHover={{ rotate: -8, scale: 1.08, transition: spring }}
-                className="grid h-10 w-10 place-items-center rounded-xl bg-deep"
+                className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/10"
               >
-                <Icon name="qr" className="h-5 w-5" />
-              </motion.span>
+                <img 
+                  src={LogoImage} 
+                  alt="SpaceScanner Logo" 
+                  className="h-full w-full object-cover" 
+                />
+              </motion.div>
+              {/* 👆 END OF IMAGE REPLACEMENT 👆 */}
+
               <span className="leading-tight">
-                <span className="block text-lg font-medium">HomeScanner</span>
+                <span className="block text-lg font-medium">SpaceScanner</span>
                 <span className="block text-[10px] text-white/50">The digital passport of your home.</span>
               </span>
             </Link>
@@ -138,11 +150,13 @@ export default function Footer() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="flex flex-col items-start justify-between gap-5 border-t border-white/10 py-6 text-xs text-white/45 sm:flex-row sm:items-center"
         >
-          <p>© 2026 HomeScanner. All rights reserved.</p>
+          <p>© 2026 SpaceScanner. All rights reserved.</p>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <a href="#top" className="transition-colors hover:text-white">Privacy Policy</a>
-            <a href="#top" className="transition-colors hover:text-white">Terms of Use</a>
+         
+            {/* 👇 OPTIONAL: Link to your new Terms page 👇 */}
+           
+            
             <Magnetic>
               <button
                 type="button"

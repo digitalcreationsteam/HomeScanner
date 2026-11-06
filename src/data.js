@@ -20,7 +20,7 @@ export const records = [
 
 export const steps = [
   ["crane", "Build", "Construct with quality and verified materials."],
-  ["file", "Document", "Capture everything that matters in HomeScanner."],
+  ["file", "Document", "Capture everything that matters in SpaceScanner."],
   ["home", "Handover", "Share the digital passport with homeowners."],
   ["phone", "Maintain", "Stay connected and reduce post-handover issues."],
 ];
@@ -47,8 +47,8 @@ export const scanSteps = [
 ];
 
 export const footerCols = [
-  ["Product", [["Features", "/#records"], ["How It Works", "/#how"], ["Security", "/about"], ["Pricing", "/demo"]]],
-  ["For Builders", [["Benefits", "/#builders"], ["Handover Process", "/#how"], ["Integrations", "/demo"], ["Book a Demo", "/demo"]]],
-  ["For Homeowners", [["Benefits", "/#homeowners"], ["How It Works", "/#how"], ["Support", "/about"]]],
-  ["Company", [["About Us", "/about"], ["Blog", "/about"], ["Careers", "/about"], ["Contact Us", "/demo"]]],
+  ["Product", [["Features", "/#records"]]],
+  ["For Builders", [["Benefits", "/#builders"],]],
+  ["For Homeowners", [["Benefits", "/#homeowners"],]],
+  ["Company", [["About Us", "/about"],]],
 ];

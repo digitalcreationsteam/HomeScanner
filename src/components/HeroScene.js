@@ -572,7 +572,7 @@ export default function HeroScene({ source }) {
         gl.domElement.addEventListener("webglcontextlost", () => console.warn("[HeroScene] WebGL context lost (common on low-memory phones)"));
         gl.domElement.addEventListener("webglcontextrestored", () => log("WebGL context restored"));
       }}
-      aria-label="3D iPhone showing the HomeScanner app in front of an architectural blueprint skyline. Drag the phone to scroll its screen."
+      aria-label="3D iPhone showing the SpaceScanner app in front of an architectural blueprint skyline. Drag the phone to scroll its screen."
     >
       <Scene source={source} />
     </Canvas>
