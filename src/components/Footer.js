@@ -107,20 +107,7 @@ export default function Footer() {
               A permanent digital record of your property: materials, appliances, installations and maintenance information, all in one place.
             </p>
 
-            <div className="mt-7 flex gap-2.5">
-              {socials.map((s) => (
-                <motion.a
-                  key={s.label}
-                  href={s.href}
-                  aria-label={s.label}
-                  whileHover={{ y: -4, scale: 1.1, transition: spring }}
-                  whileTap={{ scale: 0.92 }}
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/5 text-white/70 transition-colors hover:border-sky hover:bg-sky/20 hover:text-white"
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true"><path d={s.path} /></svg>
-                </motion.a>
-              ))}
-            </div>
+          
           </motion.div>
 
           {footerCols.map(([title, items]) => (
