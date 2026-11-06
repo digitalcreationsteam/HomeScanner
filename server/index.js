@@ -8,7 +8,10 @@ const demoRoutes = require("./route/demo");
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["https://spacexstudio.com", "http://localhost:3000"], // Add your actual live domain here
+  methods: ["GET", "POST"],
+}));
 app.use(express.json());
 
 // Connect to Database
