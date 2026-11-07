@@ -162,7 +162,7 @@ export default function Preloader({ onReveal }) {
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.6 }} className="mt-3 text-sm text-white/50">
-                The digital passport of your home.
+                The digital passport of your space.
               </motion.p>
             </div>
           </motion.div>

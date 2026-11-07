@@ -99,7 +99,7 @@ export default function Footer() {
 
               <span className="leading-tight">
                 <span className="block text-lg font-medium">SpaceScanner</span>
-                <span className="block text-[10px] text-white/50">The digital passport of your home.</span>
+                <span className="block text-[10px] text-white/50">The digital passport of your space.</span>
               </span>
             </Link>
 

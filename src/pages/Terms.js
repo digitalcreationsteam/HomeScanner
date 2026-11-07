@@ -413,7 +413,7 @@ export default function Terms() {
               Phone: [Insert official contact number]</p>
 
               <div className="mt-16 rounded-2xl border border-line bg-white/50 p-8 text-center backdrop-blur-sm">
-                <p className="text-lg font-medium text-ink">SpaceScanner — The Digital Passport of Your Home.</p>
+                <p className="text-lg font-medium text-ink">SpaceScanner — The Digital Passport of Your Space.</p>
                 <p className="mt-2 text-sm text-muted">By using SpaceScanner, you acknowledge that you have read and understood these Terms and agree to comply with them.</p>
               </div>
             </div>

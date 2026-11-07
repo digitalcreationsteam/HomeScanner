@@ -33,7 +33,7 @@ export default function Navbar() {
           <img src={LogoImage} alt="Logo" className="h-9 w-9 rounded-xl object-cover" />
           <span className="leading-tight">
             <span className="block text-lg font-medium tracking-tight">SpaceScanner</span>
-            <span className="hidden text-[10px] text-muted sm:block">The digital passport of your home.</span>
+            <span className="hidden text-[10px] text-muted sm:block">The digital passport of your space.</span>
           </span>
         </Link>
 

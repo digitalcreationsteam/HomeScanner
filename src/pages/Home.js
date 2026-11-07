@@ -83,7 +83,7 @@ function Hero() {
           <motion.div variants={container} initial="hidden" animate="show" className="lg:max-w-[44%] mx-auto lg:mx-0 text-center lg:text-left">
             
             <motion.p variants={item} className="inline-block rounded-full border border-accent/30 bg-white px-4 py-1.5 text-xs sm:text-sm text-deep font-medium">
-              The digital passport of your home.
+              The digital passport of your space.
             </motion.p>
             
             {/* FIXED TYPOGRAPHY: Larger on mobile, scaled on desktop */}
