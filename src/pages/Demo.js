@@ -101,7 +101,7 @@ export default function Demo() {
 
     try {
       // Update this URL to your actual backend URL when deploying
-      const res = await fetch("http://api.spacexstudio.com/api/demo-request", {
+      const res = await fetch("https://api.spacexstudio.com/api/demo-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
