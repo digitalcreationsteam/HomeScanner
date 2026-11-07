@@ -9,7 +9,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ["https://api.spacexstudio.com", "http://localhost:3000"], // Add your actual live domain here
+  origin: ["https://spacexstudio.com", "http://localhost:3000"], // Add your actual live domain here
   methods: ["GET", "POST"],
 }));
 app.use(express.json());
